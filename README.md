@@ -36,6 +36,22 @@ se reflejan sin reinstalar) con todas sus dependencias, más `ipykernel` y
 [`ejemplos/test_algebra_lineal.ipynb`](ejemplos/test_algebra_lineal.ipynb).
 En VS Code, abre el notebook y selecciona el kernel del `.venv`.
 
+**⌨️ Atajos de teclado útiles en VS Code:**
+
+| Acción | Windows / Linux | macOS |
+|---|---|---|
+| Abrir la terminal integrada (para escribir los comandos de arriba) | `Ctrl` + `` ` `` | `Ctrl` + `` ` `` |
+| Paleta de comandos | `Ctrl` + `Shift` + `P` | `Cmd` + `Shift` + `P` |
+
+💡 Alternativa sin comandos: abre la paleta (`Ctrl/Cmd` + `Shift` + `P`),
+escribe **"Python: Create Environment..."**, elige **Venv**, selecciona tu
+Python y marca `requirements.txt` cuando pregunte qué dependencias instalar —
+VS Code crea el `.venv` y lo instala todo por ti.
+
+**🗑️ ¿Quieres eliminar el entorno?** Borra la carpeta `.venv` en cualquier
+momento: no afecta al código del proyecto y puedes regenerarla cuando la
+necesites repitiendo los pasos 2 y 3 (o con "Python: Create Environment...").
+
 ## 📋 Uso Básico
 
 ### 1. Preparar Google Sheet
