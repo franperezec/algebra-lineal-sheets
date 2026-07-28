@@ -30,11 +30,15 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Esto instala `algebra-lineal-sheets` en **modo editable** (los cambios al código
-se reflejan sin reinstalar) con todas sus dependencias, más `ipykernel` y
-`nbconvert` para ejecutar el notebook de prueba
+Esto instala `algebra-lineal-sheets` con todas sus dependencias (numpy,
+gspread, google-auth, openpyxl), más `ipykernel` y `nbconvert` para ejecutar
+el notebook de prueba
 [`ejemplos/test_algebra_lineal.ipynb`](ejemplos/test_algebra_lineal.ipynb).
 En VS Code, abre el notebook y selecciona el kernel del `.venv`.
+
+> 🛠️ **¿Vas a modificar el código de la librería?** Instala además la versión
+> local en modo editable con `pip install -e .` — así tus cambios en
+> `algebra_lineal/` se usan en lugar de la versión publicada en PyPI.
 
 **⌨️ Atajos de teclado útiles en VS Code:**
 

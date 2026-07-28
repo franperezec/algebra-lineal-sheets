@@ -1,11 +1,25 @@
-# Requisitos para trabajar en local con el repositorio clonado.
-# Uso:
+# =====================================================================
+# Entorno local para algebra-lineal-sheets
+# Uso (con el entorno virtual activado):
 #   pip install -r requirements.txt
-#
-# Instala la libreria en modo editable; sus dependencias (numpy, gspread,
-# google-auth*, openpyxl) se toman automaticamente de pyproject.toml.
--e .
+# =====================================================================
+
+# La libreria (desde PyPI)
+algebra-lineal-sheets>=1.1.0
+
+# Dependencias de la libreria
+numpy>=1.20.0
+gspread>=5.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=0.5.0
+google-auth-httplib2>=0.1.0
+openpyxl>=3.0.0
 
 # Herramientas para ejecutar los notebooks (VS Code / Jupyter)
 ipykernel>=6.0
 nbconvert>=7.0
+
+# NOTA para desarrollo: si vas a MODIFICAR el codigo de la libreria,
+# instala tambien la version local en modo editable con:
+#   pip install -e .
+# (asi tus cambios en algebra_lineal/ se reflejan sin reinstalar)
