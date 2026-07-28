@@ -11,10 +11,31 @@ pip install algebra-lineal-sheets
 
 ¡Y listo! No necesitas configurar nada más.
 
-### 💻 Trabajar en local (clonar el repositorio)
+### 🎓 Materiales de la clase (sin clonar nada)
 
-Si quieres trabajar con el código del proyecto (ejemplos, notebooks, desarrollo),
-crea tu propio entorno con `requirements.txt`:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/franperezec/algebra-lineal-sheets/blob/main/ejemplos/numpy_para_economistas.ipynb)
+
+- **Notebook de la clase** *"NumPy para economistas"*: ábrelo directo en Google
+  Colab con el botón de arriba, o
+  [descárgalo aquí](https://raw.githubusercontent.com/franperezec/algebra-lineal-sheets/main/ejemplos/numpy_para_economistas.ipynb)
+  (clic derecho → *"Guardar enlace como..."*).
+- **Excel de ejemplo** con las matrices de la clase (`A`, `B`, `v1`, `v2`, `b0`):
+  [descargar matrices_ejemplo.xlsx](https://raw.githubusercontent.com/franperezec/algebra-lineal-sheets/main/ejemplos/matrices_ejemplo.xlsx).
+
+El notebook funciona en dos modos:
+
+- **En Colab**: usa Google Sheets como en clase (`configurar()`), o sube
+  `matrices_ejemplo.xlsx` al entorno de Colab (icono 📁 → subir) y usa
+  `configurar(sheet='matrices_ejemplo.xlsx')`.
+- **En local (VS Code / Jupyter)**: guarda el notebook y el Excel en la misma
+  carpeta y usa el modo Excel local — sin internet ni cuenta de Google.
+
+### 💻 Trabajar en local (clonar el repositorio) — opcional
+
+Clonar el repositorio **no es necesario** para usar la librería (basta el
+`pip install` de arriba) ni para la clase (los materiales se descargan en la
+sección anterior). Clona si quieres todo junto en una carpeta o vas a
+contribuir al proyecto:
 
 ```bash
 # 1. Clonar el repositorio
@@ -31,9 +52,9 @@ pip install -r requirements.txt
 ```
 
 Esto instala `algebra-lineal-sheets` con todas sus dependencias (numpy,
-gspread, google-auth, openpyxl), más `ipykernel` y `nbconvert` para ejecutar
-el notebook de prueba
-[`ejemplos/test_algebra_lineal.ipynb`](ejemplos/test_algebra_lineal.ipynb).
+gspread, google-auth, openpyxl), más `ipykernel`, `nbconvert` y `matplotlib`
+para ejecutar el notebook de la clase
+[`ejemplos/numpy_para_economistas.ipynb`](ejemplos/numpy_para_economistas.ipynb).
 En VS Code, abre el notebook y selecciona el kernel del `.venv`.
 
 > 🛠️ **Opcional — ¿vas a modificar el código de la librería?** Por defecto

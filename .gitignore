@@ -80,6 +80,8 @@ client_secret.json
 
 # Archivos Excel generados por ejemplos/notebooks
 *.xlsx
+# ...excepto el Excel de ejemplo para estudiantes
+!ejemplos/matrices_ejemplo.xlsx
 
 # Archivos temporales
 *.tmp
