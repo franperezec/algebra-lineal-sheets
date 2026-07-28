@@ -19,7 +19,7 @@ Uso básico:
 
 Autor: Francisco Pérez Mogollón
 Email: francisco.perezxxi@gmail.com
-Versión: 1.1.0
+Versión: 1.2.0
 """
 
 # Importar todas las funciones principales del módulo core
@@ -47,7 +47,7 @@ __all__ = [
 ]
 
 # Metadatos del paquete (IMPORTANTE: mantener sincronizado con pyproject.toml)
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __author__ = "Francisco Pérez Mogollón"
 __email__ = "francisco.perezxxi@gmail.com"
 __description__ = "Álgebra lineal simplificada con Google Sheets y Excel"

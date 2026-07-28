@@ -291,7 +291,14 @@ Notas del modo Excel:
 - Solo archivos `.xlsx` (no `.xls` antiguo)
 - Si el archivo tiene fórmulas, debe haberse guardado desde Excel al menos
   una vez para que Python pueda leer los valores calculados
+- Además, al guardar desde Python (`exportar()`) los valores calculados de
+  las fórmulas se pierden para la librería: vuelve a abrir y guardar el
+  archivo en Excel para que `importar()` los lea de nuevo (la librería te
+  avisa cuando detecta fórmulas)
 - `exportar()` crea el archivo si no existe
+- Puedes escribir los decimales con coma o con punto (`3,5` o `3.5`): la
+  librería entiende ambos, y al exportar verás los números en el formato
+  regional de tu equipo
 
 #### ✏️ Editar el Excel dentro de VS Code (Office Viewer)
 
@@ -360,7 +367,8 @@ MIT License - Ver [LICENSE](https://github.com/franperezec/algebra-lineal-sheets
 
 ## 🤝 Contribuir
 
-¡Las contribuciones son bienvenidas! 
+¡Las contribuciones son bienvenidas! Revisa el [ROADMAP](ROADMAP.md) para ver
+las mejoras planificadas. Los tests se ejecutan con `pytest tests/`.
 
 ## 📧 Contacto
 

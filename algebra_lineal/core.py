@@ -14,6 +14,7 @@ import re
 import inspect
 
 import gspread
+from gspread.utils import ValueRenderOption
 from google.auth import default
 import numpy as np
 
@@ -55,23 +56,36 @@ class _BackendGoogle:
         return list(self._pestanas.keys())
 
     def leer(self, nombre):
-        return self._pestanas[nombre].get_all_values()
+        # UNFORMATTED: los números llegan como números, no como texto formateado
+        # por la configuración regional (evita que "3,5" se lea como texto).
+        return self._pestanas[nombre].get_all_values(
+            value_render_option=ValueRenderOption.unformatted)
 
     def escribir(self, nombre, datos, sobrescribir=True):
         """Devuelve 'creada'/'actualizada', o None si existe y sobrescribir=False."""
+        filas_datos = len(datos)
+        cols_datos = max((len(fila) for fila in datos), default=1)
+
         if nombre in self._pestanas:
             if not sobrescribir:
                 return None
             worksheet = self._pestanas[nombre]
             worksheet.clear()
+            if (filas_datos > worksheet.row_count or
+                    cols_datos > worksheet.col_count):
+                worksheet.resize(rows=max(filas_datos, worksheet.row_count),
+                                 cols=max(cols_datos, worksheet.col_count))
             accion = "actualizada"
         else:
-            worksheet = self._ss.add_worksheet(title=nombre, rows=50, cols=20)
+            worksheet = self._ss.add_worksheet(
+                title=nombre,
+                rows=max(50, filas_datos),
+                cols=max(20, cols_datos))
             self._pestanas[nombre] = worksheet
             accion = "creada"
 
         if datos:
-            worksheet.update('A1', datos)
+            worksheet.update(values=datos, range_name='A1')
         return accion
 
 
@@ -87,6 +101,7 @@ class _BackendExcel:
         self._openpyxl = openpyxl
         self._ruta = ruta
         self._nuevo = not os.path.exists(ruta)
+        self._aviso_formulas_dado = False
         if self._nuevo and not crear_si_no_existe:
             raise FileNotFoundError(f"No existe el archivo: {ruta}")
         self.descripcion = f"📊 Excel local: {os.path.basename(ruta)}"
@@ -102,9 +117,19 @@ class _BackendExcel:
         return self._cargar().sheetnames
 
     def leer(self, nombre):
+        # Valores nativos de openpyxl (float/int/None): sin pasar por texto,
+        # el separador decimal regional nunca interfiere.
         hoja = self._cargar()[nombre]
-        return [['' if celda is None else str(celda) for celda in fila]
-                for fila in hoja.iter_rows(values_only=True)]
+        return [list(fila) for fila in hoja.iter_rows(values_only=True)]
+
+    @staticmethod
+    def _contiene_formulas(libro):
+        for hoja in libro.worksheets:
+            for fila in hoja.iter_rows(values_only=True):
+                for valor in fila:
+                    if isinstance(valor, str) and valor.startswith('='):
+                        return True
+        return False
 
     def escribir(self, nombre, datos, sobrescribir=True):
         """Devuelve 'creada'/'actualizada', o None si existe y sobrescribir=False."""
@@ -115,6 +140,14 @@ class _BackendExcel:
             accion = "creada"
         else:
             libro = self._cargar(para_escribir=True)
+            if not self._aviso_formulas_dado and self._contiene_formulas(libro):
+                self._aviso_formulas_dado = True
+                nombre_archivo = os.path.basename(self._ruta)
+                print(f"⚠️  {nombre_archivo} contiene FÓRMULAS: "
+                      "Python no calcula sus resultados.")
+                print("💡 Tras guardar desde Python, abre y guarda el archivo "
+                      "en Excel para que importar() vuelva a leer los "
+                      "valores calculados de esas fórmulas.")
             if nombre in libro.sheetnames:
                 if not sobrescribir:
                     return None
@@ -351,24 +384,120 @@ def _limpiar_nombre_variable(nombre):
     return nombre_limpio or "variable_sin_nombre"
 
 
-def _procesar_datos_mixtos(data):
-    """Procesa datos que pueden contener valores no numéricos."""
+class ErrorDeDatos(ValueError):
+    """Datos inválidos en una pestaña; el mensaje viene en español, listo para mostrar."""
+
+
+def _coordenada_celda(fila, columna):
+    """Índices (0, 0) → coordenada 'A1' estilo hoja de cálculo."""
+    letras = ''
+    c = columna
+    while True:
+        letras = chr(ord('A') + c % 26) + letras
+        c = c // 26 - 1
+        if c < 0:
+            break
+    return f"{letras}{fila + 1}"
+
+
+def _normalizar_celda(celda):
+    """Normaliza una celda cruda.
+
+    Returns:
+        None si está vacía, float si es numérica (acepta punto o coma decimal,
+        p. ej. '3.5', '3,5' o '1.234,56'), o el texto original si no es numérica.
+    """
+    if celda is None:
+        return None
+    if isinstance(celda, bool):
+        return float(celda)
+    if isinstance(celda, (int, float, np.number)):
+        return float(celda)
+
+    texto = str(celda).strip()
+    if texto == '':
+        return None
     try:
-        resultado = []
-        for fila in data:
-            fila_procesada = []
-            for celda in fila:
-                if celda == '' or celda is None:
-                    fila_procesada.append(0.0)
-                else:
-                    try:
-                        fila_procesada.append(float(celda))
-                    except ValueError:
-                        fila_procesada.append(0.0)
-            resultado.append(fila_procesada)
-        return np.array(resultado)
-    except Exception:
-        raise ValueError("No se pudieron procesar los datos")
+        return float(texto)
+    except ValueError:
+        pass
+
+    # Formato regional: '1.234,56' (miles con punto) o '3,5' (coma decimal)
+    candidato = texto.replace(' ', '')
+    if re.fullmatch(r'[+-]?\d{1,3}(\.\d{3})+(,\d+)?', candidato):
+        candidato = candidato.replace('.', '').replace(',', '.')
+    else:
+        candidato = candidato.replace(',', '.')
+    try:
+        return float(candidato)
+    except ValueError:
+        return texto
+
+
+def _limpiar_y_validar(nombre_pestana, datos_crudos):
+    """Convierte los datos crudos de una pestaña en lista de filas de floats.
+
+    - Acepta números nativos y textos numéricos con punto o coma decimal.
+    - Elimina filas y columnas COMPLETAMENTE vacías (separadores legítimos).
+    - Celdas de texto no numérico o huecos intermedios → ErrorDeDatos con
+      coordenadas de hoja de cálculo, en vez de corromper la matriz.
+
+    Returns:
+        list[list[float]]: vacía si la pestaña no tiene datos.
+    """
+    if not datos_crudos:
+        return []
+
+    ancho = max((len(fila) for fila in datos_crudos), default=0)
+    rejilla = []
+    for fila in datos_crudos:
+        fila_norm = [_normalizar_celda(celda) for celda in fila]
+        fila_norm += [None] * (ancho - len(fila_norm))
+        rejilla.append(fila_norm)
+
+    filas_utiles = [i for i, fila in enumerate(rejilla)
+                    if any(celda is not None for celda in fila)]
+    cols_utiles = [j for j in range(ancho)
+                   if any(rejilla[i][j] is not None for i in filas_utiles)]
+    if not filas_utiles:
+        return []
+
+    textos = []
+    huecos = []
+    matriz = []
+    for i in filas_utiles:
+        fila_limpia = []
+        for j in cols_utiles:
+            celda = rejilla[i][j]
+            if celda is None:
+                huecos.append(_coordenada_celda(i, j))
+            elif isinstance(celda, str):
+                textos.append((_coordenada_celda(i, j), celda))
+            else:
+                fila_limpia.append(celda)
+        matriz.append(fila_limpia)
+
+    if textos or huecos:
+        lineas = [f"❌ '{nombre_pestana}': la pestaña tiene datos "
+                  "que no son numéricos"]
+        if textos:
+            detalle = ', '.join(f"{coord} ('{valor}')" for coord, valor in textos[:5])
+            if len(textos) > 5:
+                detalle += f" y {len(textos) - 5} más"
+            lineas.append(f"   📝 Texto en: {detalle}")
+            primera = filas_utiles[0]
+            if all(isinstance(rejilla[primera][j], str) for j in cols_utiles):
+                lineas.append("   💡 La primera fila parece de ENCABEZADOS: bórrala, "
+                              "la matriz debe contener solo números")
+        if huecos:
+            detalle = ', '.join(huecos[:5])
+            if len(huecos) > 5:
+                detalle += f" y {len(huecos) - 5} más"
+            lineas.append(f"   ⬜ Celdas vacías en: {detalle}")
+            lineas.append("   💡 Completa los datos o elimina la fila/columna incompleta")
+        raise ErrorDeDatos('\n'.join(lineas))
+
+    return matriz
 
 
 def _obtener_dimensiones_y_tipo(valor):
@@ -393,26 +522,13 @@ def _obtener_dimensiones_y_tipo(valor):
         return None, "❌ Tipo no soportado"
 
 
-def _filtrar_datos(data):
-    """Elimina celdas y filas vacías de los datos crudos."""
-    datos_filtrados = []
-    for fila in data:
-        fila_filtrada = [celda for celda in fila if celda.strip() != '']
-        if fila_filtrada:
-            datos_filtrados.append(fila_filtrada)
-    return datos_filtrados
-
-
-def _convertir_a_valor(datos_filtrados):
-    """Convierte datos filtrados en escalar/vector/matriz numpy.
+def _convertir_a_valor(datos_limpios):
+    """Convierte datos ya limpios (de _limpiar_y_validar) en escalar/vector/matriz.
 
     Returns:
         (valor, tipo_str)
     """
-    try:
-        array_np = np.array(datos_filtrados).astype(float)
-    except ValueError:
-        array_np = _procesar_datos_mixtos(datos_filtrados)
+    array_np = np.array(datos_limpios, dtype=float)
 
     if array_np.size == 1:
         return array_np.item(), "escalar"
@@ -454,16 +570,16 @@ def workspace(sheet_name=None):
     for i, nombre in enumerate(backend.nombres_pestanas(), 1):
         try:
             data = backend.leer(nombre)
-            datos_filtrados = _filtrar_datos(data) if data else []
+            datos_limpios = _limpiar_y_validar(nombre, data)
 
-            if not datos_filtrados:
+            if not datos_limpios:
                 print(f"{i:<3} {nombre:<20} {'VACÍA':<12} {'⚠️  Vacía':<15}")
                 workspace_info[nombre] = {'tipo': 'vacía', 'dimensiones': None}
                 continue
 
             # Dimensiones reales en la fuente
-            filas_sheets = len(datos_filtrados)
-            cols_sheets = max(len(fila) for fila in datos_filtrados)
+            filas_sheets = len(datos_limpios)
+            cols_sheets = len(datos_limpios[0])
 
             if filas_sheets == 1 and cols_sheets == 1:
                 tipo = "📊 Escalar"
@@ -490,6 +606,10 @@ def workspace(sheet_name=None):
                     'tipo': 'matriz', 'dimensiones': (filas_sheets, cols_sheets)}
 
             print(f"{i:<3} {nombre:<20} {dimensiones_str:<12} {tipo:<15}")
+
+        except ErrorDeDatos:
+            print(f"{i:<3} {nombre:<20} {'REVISAR':<12} {'⚠️  Datos no numéricos':<15}")
+            workspace_info[nombre] = {'tipo': 'datos_invalidos', 'dimensiones': None}
 
         except Exception:
             print(f"{i:<3} {nombre:<20} {'ERROR':<12} {'❌ Error':<15}")
@@ -547,13 +667,13 @@ def importar(*nombres_matrices, sheet_name=None):
         if pestana_encontrada:
             try:
                 data = backend.leer(pestana_encontrada)
-                datos_filtrados = _filtrar_datos(data) if data else []
+                datos_limpios = _limpiar_y_validar(pestana_encontrada, data)
 
-                if not datos_filtrados:
+                if not datos_limpios:
                     print(f"⚠️  '{nombre_solicitado}' está vacía")
                     continue
 
-                valor, tipo = _convertir_a_valor(datos_filtrados)
+                valor, tipo = _convertir_a_valor(datos_limpios)
 
                 nombre_variable = _limpiar_nombre_variable(nombre_solicitado)
                 datos_cargados[nombre_variable] = valor
@@ -565,6 +685,8 @@ def importar(*nombres_matrices, sheet_name=None):
 
                 print(f"✅ {nombre_solicitado} → {tipo} {dimensiones_str}")
 
+            except ErrorDeDatos as e:
+                print(e)
             except Exception as e:
                 print(f"❌ Error: {nombre_solicitado} - {e}")
         else:
@@ -596,12 +718,13 @@ def _cargar_todas_matrices(backend):
 
         try:
             data = backend.leer(nombre_hoja)
-            datos_filtrados = _filtrar_datos(data) if data else []
+            datos_limpios = _limpiar_y_validar(nombre_hoja, data)
 
-            if not datos_filtrados:
+            if not datos_limpios:
+                print(f"⚠️  '{nombre_hoja}' está vacía")
                 continue
 
-            valor, tipo = _convertir_a_valor(datos_filtrados)
+            valor, tipo = _convertir_a_valor(datos_limpios)
             datos_cargados[nombre_variable] = valor
 
             if isinstance(valor, (int, float)):
@@ -611,6 +734,8 @@ def _cargar_todas_matrices(backend):
 
             print(f"✅ {nombre_hoja} → {tipo} {dimensiones_str}")
 
+        except ErrorDeDatos as e:
+            print(e)
         except Exception as e:
             print(f"❌ Error en {nombre_hoja}: {e}")
 
@@ -697,6 +822,11 @@ def exportar(*nombres_variables, sheet_name=None, sobrescribir=True):
                 print(f"⚠️  {nombre_var}: Tipo no soportado")
                 continue
 
+            if _contiene_no_finitos(datos):
+                print(f"❌ '{nombre_var}' contiene NaN o infinito — no se puede exportar")
+                print("💡 Revisa divisiones entre cero o matrices singulares (determinante 0)")
+                continue
+
             accion = backend.escribir(nombre_var, datos, sobrescribir=sobrescribir)
             if accion is None:
                 print(f"⚠️  {nombre_var}: Ya existe (sobrescribir=False)")
@@ -714,6 +844,11 @@ def exportar(*nombres_variables, sheet_name=None, sobrescribir=True):
     print(f"🔗 Revisa tu archivo — {backend.descripcion}")
 
     return exportadas
+
+
+def _contiene_no_finitos(datos):
+    """True si alguna celda es NaN o infinito (romperían la fuente de datos)."""
+    return any(not np.isfinite(celda) for fila in datos for celda in fila)
 
 
 def _preparar_datos_para_sheets(valor):
@@ -843,4 +978,4 @@ def version():
     except ImportError:
         print("📦 ALGEBRA LINEAL")
         print("👨‍🏫 Sistema de álgebra lineal con Google Sheets y Excel")
-    print(f"🛠️  Instalación: pip install algebra-lineal-sheets")
+    print("🛠️  Instalación: pip install algebra-lineal-sheets")
