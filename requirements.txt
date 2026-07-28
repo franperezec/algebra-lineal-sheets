@@ -1,0 +1,11 @@
+# Requisitos para trabajar en local con el repositorio clonado.
+# Uso:
+#   pip install -r requirements.txt
+#
+# Instala la libreria en modo editable; sus dependencias (numpy, gspread,
+# google-auth*, openpyxl) se toman automaticamente de pyproject.toml.
+-e .
+
+# Herramientas para ejecutar los notebooks (VS Code / Jupyter)
+ipykernel>=6.0
+nbconvert>=7.0

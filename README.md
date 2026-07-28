@@ -11,6 +11,31 @@ pip install algebra-lineal-sheets
 
 ¡Y listo! No necesitas configurar nada más.
 
+### 💻 Trabajar en local (clonar el repositorio)
+
+Si quieres trabajar con el código del proyecto (ejemplos, notebooks, desarrollo),
+crea tu propio entorno con `requirements.txt`:
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/franperezec/algebra-lineal-sheets.git
+cd algebra-lineal-sheets
+
+# 2. Crear y activar un entorno virtual (Python 3.8 o superior)
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # macOS / Linux
+
+# 3. Instalar la librería y las herramientas de notebook
+pip install -r requirements.txt
+```
+
+Esto instala `algebra-lineal-sheets` en **modo editable** (los cambios al código
+se reflejan sin reinstalar) con todas sus dependencias, más `ipykernel` y
+`nbconvert` para ejecutar el notebook de prueba
+[`ejemplos/test_algebra_lineal.ipynb`](ejemplos/test_algebra_lineal.ipynb).
+En VS Code, abre el notebook y selecciona el kernel del `.venv`.
+
 ## 📋 Uso Básico
 
 ### 1. Preparar Google Sheet
