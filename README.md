@@ -215,6 +215,24 @@ Notas del modo Excel:
   una vez para que Python pueda leer los valores calculados
 - `exportar()` crea el archivo si no existe
 
+#### ✏️ Editar el Excel dentro de VS Code (Office Viewer)
+
+Si trabajas en VS Code no necesitas abrir Excel: la extensión **Office Viewer**
+permite ver y editar el archivo `.xlsx` directamente en el editor.
+
+1. **Instalar la extensión:** abre la vista de Extensiones (`Ctrl+Shift+X`),
+   busca **"Office Viewer"** (`cweijan.vscode-office`) e instálala. O desde la
+   terminal:
+   ```bash
+   code --install-extension cweijan.vscode-office
+   ```
+2. **Abrir el archivo:** haz clic derecho sobre el `.xlsx` en el explorador de
+   VS Code → **"Open With..." / "Abrir con..."** → elige **Office Viewer**
+   (puedes marcarla como editor por defecto para todos los `.xlsx`).
+3. **Editar y guardar:** modifica las celdas y guarda con `Ctrl+S`. Escribe
+   valores numéricos directos (no fórmulas — ver la nota anterior sobre
+   fórmulas y valores calculados).
+
 ### Verificar Variables
 
 ```python
