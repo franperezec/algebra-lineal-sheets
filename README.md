@@ -36,9 +36,21 @@ el notebook de prueba
 [`ejemplos/test_algebra_lineal.ipynb`](ejemplos/test_algebra_lineal.ipynb).
 En VS Code, abre el notebook y selecciona el kernel del `.venv`.
 
-> 🛠️ **¿Vas a modificar el código de la librería?** Instala además la versión
-> local en modo editable con `pip install -e .` — así tus cambios en
-> `algebra_lineal/` se usan en lugar de la versión publicada en PyPI.
+> 🛠️ **Opcional — ¿vas a modificar el código de la librería?** Por defecto
+> `requirements.txt` instala la versión publicada en PyPI, y esa es la forma
+> recomendada para la clase. Si además quieres que tus cambios locales en
+> `algebra_lineal/` se usen sin reinstalar, instala la versión local en modo
+> editable con `pip install -e .`.
+
+> 📦 **¿Falta alguna librería?** Si al ejecutar un ejemplo aparece
+> `ModuleNotFoundError` (por ejemplo con `pandas` u otra librería que usemos
+> a futuro), activa el entorno e instálala con pip:
+>
+> ```bash
+> .venv\Scripts\activate            # Windows
+> # source .venv/bin/activate      # macOS / Linux
+> pip install pandas                # o la librería que falte
+> ```
 
 **⌨️ Atajos de teclado útiles en VS Code:**
 
