@@ -1,0 +1,283 @@
+# 📚 Álgebra Lineal con Google Sheets y Excel
+**Álgebra lineal simplificada para estudiantes con integración perfecta a Google Sheets y Excel.**
+
+Permite a estudiantes y profesores trabajar con matrices almacenadas en Google Sheets (por nombre o por enlace) o en archivos Excel locales, usando Python de forma intuitiva y sencilla. Perfecto para cursos de álgebra lineal, análisis numérico y ciencias de datos.
+
+## 🚀 Instalación
+
+```bash
+pip install algebra-lineal-sheets
+```
+
+¡Y listo! No necesitas configurar nada más.
+
+## 📋 Uso Básico
+
+### 1. Preparar Google Sheet
+- Crear Google Sheet llamado `matrices`
+- Añadir pestañas con nombres: `A`, `B`, `v`, etc.
+- Llenar con datos numéricos (sin texto ni fórmulas)
+
+### 2. Usar en Python
+
+```python
+# Importar y configurar (una vez por sesión)
+from algebra_lineal import *
+configurar()
+
+# Ver qué matrices tienes disponibles
+workspace()
+
+# Importar matrices específicas
+importar('A', 'B', 'v')
+
+# Realizar operaciones de álgebra lineal
+C = A @ B                      # Multiplicación matricial
+suma = A + B                   # Suma de matrices
+Ainv = np.linalg.inv(A)       # Matriz inversa
+det_A = np.linalg.det(A)      # Determinante
+
+# Exportar resultados de vuelta a Google Sheets
+exportar('C', 'suma', 'Ainv')
+```
+
+## 📊 Ejemplo Completo
+
+```python
+from algebra_lineal import *
+import numpy as np
+
+# Configurar conexión con Google Sheets
+configurar()
+
+# Ver workspace
+workspace()
+# 🏢 WORKSPACE: 'matrices'
+# ===========================================================================
+# #   NOMBRE               DIMENSIONES  TIPO           
+# ---------------------------------------------------------------------------
+# 1   A                    3×3          📋 Matriz      
+# 2   B                    3×3          📋 Matriz      
+# 3   v                    3×1          📉 Vector columna
+
+# Importar matrices necesarias
+importar('A', 'B', 'v')
+
+# Resolver sistema de ecuaciones Ax = b
+b = v  # Usar vector v como término independiente
+x = np.linalg.solve(A, b)
+
+# Verificar solución
+verificacion = A @ x - b
+error = np.linalg.norm(verificacion)
+
+print(f"Solución: x = {x}")
+print(f"Error: {error:.2e}")
+
+# Exportar resultados
+exportar('x', 'verificacion')
+```
+
+## 🔧 Funciones Disponibles
+
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `configurar()` | Configuración inicial | `configurar(sheet='prope2026')`, `configurar(sheet='https://docs...')` o `configurar(sheet='matrices.xlsx')` |
+| `workspace()` | Ver matrices en Sheets | `workspace()` |
+| `importar()` | Importar matrices | `importar('A', 'B')` |
+| `exportar()` | Exportar resultados | `exportar('C')` |
+| `cambiar_sheet()` | Cambiar archivo | `cambiar_sheet('proyecto2')` |
+| `ayuda()` | Ayuda completa | `ayuda()` |
+
+## 📚 Para Estudiantes
+
+### Google Colab (Recomendado)
+
+```python
+# 1. Instalar paquete
+!pip install algebra-lineal-sheets
+
+# 2. Importar y configurar
+from algebra_lineal import *
+configurar()
+
+# 3. ¡Empezar a trabajar!
+workspace()
+importar('A', 'B')
+resultado = A @ B
+exportar('resultado')
+```
+
+### Operaciones Comunes
+
+```python
+# Después de importar matrices A, B, v
+C = A @ B                          # Multiplicación matricial
+suma = A + B                       # Suma
+transpuesta = A.T                  # Transpuesta
+inversa = np.linalg.inv(A)         # Inversa (si existe)
+determinante = np.linalg.det(A)    # Determinante
+autovalores = np.linalg.eigvals(A) # Autovalores
+rango = np.linalg.matrix_rank(A)   # Rango
+norma = np.linalg.norm(v)          # Norma de vector
+```
+
+## 👨‍🏫 Para Profesores
+
+### Ventajas Pedagógicas
+
+- **Enfoque en matemáticas**: Los estudiantes se concentran en álgebra lineal, no en programación
+- **Datos modificables**: Cambiar valores en Google Sheets sin tocar código
+- **Colaborativo**: Fácil compartir matrices entre estudiantes
+- **Visual**: Ver resultados inmediatamente en Google Sheets
+- **Escalable**: Funciona igual para 10 o 1000 estudiantes
+
+### Configuración de Clase
+
+1. **Crear plantilla**: Google Sheet con matrices ejemplo
+2. **Compartir plantilla**: Estudiantes hacen copia
+3. **Dar instrucciones simples**:
+   ```python
+   !pip install algebra-lineal-sheets
+   from algebra_lineal import *
+   configurar()
+   ```
+
+### Ejemplo de Ejercicio
+
+```python
+# Ejercicio: Transformaciones lineales
+importar('T', 'v1', 'v2', 'v3')  # Matriz T y vectores
+
+# Aplicar transformación
+w1 = T @ v1
+w2 = T @ v2  
+w3 = T @ v3
+
+# Analizar propiedades
+det_T = np.linalg.det(T)
+es_invertible = abs(det_T) > 1e-10
+
+# Exportar análisis
+exportar('w1', 'w2', 'w3', 'det_T')
+```
+
+## 🛠️ Configuración Avanzada
+
+### Fuentes de datos: nombre, enlace o Excel local
+
+`configurar(sheet=...)` y `cambiar_sheet(...)` aceptan **tres formas** y
+detectan automáticamente cuál es:
+
+```python
+# 1. Google Sheet por NOMBRE
+configurar(sheet='prope2026')
+
+# 2. Google Sheet por ENLACE (copia el enlace de edición del navegador)
+configurar(sheet='https://docs.google.com/spreadsheets/d/1vpg.../edit')
+
+# 3. Excel LOCAL en tu PC — no necesita internet ni cuenta de Google
+configurar(sheet='C:/Users/ana/Documents/matrices.xlsx')
+```
+
+También puedes cambiar de fuente en cualquier momento, o usar otra solo
+para una operación puntual:
+
+```python
+cambiar_sheet('prope2026')
+importar('A', 'B')
+
+importar('A', sheet_name='otro_archivo')       # solo esta vez
+exportar('C', sheet_name='resultados.xlsx')    # crea el Excel si no existe
+```
+
+⚠️ **Importante:** `importar('prope2026')` NO abre el archivo prope2026 —
+busca una *pestaña* llamada prope2026 dentro del archivo activo.
+Para cambiar de archivo usa `cambiar_sheet('prope2026')`.
+
+### Modo Excel local
+
+Ideal para trabajar **sin internet y sin cuenta de Google** (en tu PC con
+Anaconda, VS Code, etc.). La estructura es la misma: una pestaña = una matriz.
+
+```python
+from algebra_lineal import *
+configurar(sheet='matrices.xlsx')   # sin autenticación
+workspace()
+importar('A', 'B')
+C = A @ B
+exportar('C')                       # se guarda en el mismo .xlsx
+```
+
+Notas del modo Excel:
+- Solo archivos `.xlsx` (no `.xls` antiguo)
+- Si el archivo tiene fórmulas, debe haberse guardado desde Excel al menos
+  una vez para que Python pueda leer los valores calculados
+- `exportar()` crea el archivo si no existe
+
+### Verificar Variables
+
+```python
+# Ver qué variables están disponibles para exportar
+listar_variables_exportables()
+```
+
+## ❓ Solución de Problemas
+
+### Error: "No se pudo abrir 'matrices'"
+- ✅ Verificar que el Google Sheet existe
+- ✅ Verificar que se llama exactamente 'matrices'
+- ✅ Verificar permisos de acceso
+
+### Importa las matrices de OTRO archivo (no el que quiero)
+- ✅ El paquete siempre usa el archivo activo (por defecto `matrices`)
+- ✅ Cambiar con `cambiar_sheet('mi_archivo')` o `configurar(sheet='mi_archivo')`
+- ✅ Ver qué archivo está activo: aparece en los mensajes de `importar()` y `workspace()`
+
+### Error: "Variable no encontrada"
+- ✅ Ejecutar `importar()` antes de usar variables
+- ✅ Verificar nombres exactos con `workspace()`
+
+### Error de autenticación
+- ✅ Ejecutar `configurar()` nuevamente
+- ✅ En Colab: Runtime → Restart and run all
+
+## 🔄 Actualización
+
+```bash
+pip install --upgrade algebra-lineal-sheets
+```
+
+## 📦 Requisitos
+
+- Python 3.8+
+- numpy >= 1.20.0
+- gspread >= 5.0.0
+- google-auth >= 2.0.0
+- openpyxl >= 3.0.0 (para el modo Excel local)
+
+Se instalan automáticamente con el paquete.
+
+## 📄 Licencia
+
+MIT License - Ver [LICENSE](https://github.com/franperezec/algebra-lineal-sheets/blob/main/LICENSE) para más detalles.
+
+## 🤝 Contribuir
+
+¡Las contribuciones son bienvenidas! 
+
+## 📧 Contacto
+
+- **Autor:** Francisco Pérez Mogollón
+- **Email:** francisco.perezxxi@gmail.com
+- **PyPI:** https://pypi.org/project/algebra-lineal-sheets/
+
+## 🔗 Enlaces Útiles
+
+- [Google Colab](https://colab.research.google.com/)
+- [Google Sheets](https://sheets.google.com/)
+- [NumPy Documentation](https://numpy.org/doc/)
+
+---
+
+⭐ **¡Si te resulta útil, compártelo con otros profesores!** ⭐

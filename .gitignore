@@ -1,0 +1,102 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Build artifacts
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyPI publishing
+.twine/
+twine.ini
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Google credentials (CRÍTICO: nunca subir credenciales)
+credentials.json
+token.json
+service_account.json
+client_secret.json
+*.json
+
+# Archivos Excel generados por ejemplos/notebooks
+*.xlsx
+
+# Archivos temporales
+*.tmp
+*.temp
+*.log
+*.bak
+*.backup
+
+# Archivos de configuración local
+config.local.py
+settings.local.py
+local_settings.py
+
+# Documentación generada
+docs/_build/
+docs/build/
+
+# PyPI testing
+test_upload.py
+test_install.py

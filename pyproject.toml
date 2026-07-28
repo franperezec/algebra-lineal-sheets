@@ -1,0 +1,56 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "algebra-lineal-sheets"
+version = "1.1.0"
+description = "Álgebra lineal simplificada con integración a Google Sheets y Excel para estudiantes"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Francisco Pérez Mogollón", email = "francisco.perezxxi@gmail.com"}
+]
+maintainers = [
+    {name = "Francisco Pérez Mogollón", email = "francisco.perezxxi@gmail.com"}
+]
+keywords = ["algebra", "lineal", "matrices", "google-sheets", "excel", "educacion", "estudiantes", "matematicas"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Education", 
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Framework :: Jupyter",
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "numpy>=1.20.0",
+    "gspread>=5.0.0",
+    "google-auth>=2.0.0",
+    "google-auth-oauthlib>=0.5.0",
+    "google-auth-httplib2>=0.1.0",
+    "openpyxl>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "build>=0.7.0",
+    "twine>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://pypi.org/project/algebra-lineal-sheets/"
+Documentation = "https://pypi.org/project/algebra-lineal-sheets/"
+Repository = "https://github.com/franperezec/algebra-lineal-sheets"
+
+[tool.flit.module]
+name = "algebra_lineal"
