@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "algebra-lineal-sheets"
-version = "1.3.1"
+version = "1.4.0"
 description = "Álgebra lineal simplificada con integración a Google Sheets y Excel para estudiantes"
 readme = "README.md"
 license = {text = "MIT"}
@@ -31,16 +31,29 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 
+# Núcleo: suficiente para los modos Excel local y CSV (sin Google)
 dependencies = [
     "numpy>=1.20.0",
-    "gspread>=5.0.0",
-    "google-auth>=2.0.0",
-    "google-auth-oauthlib>=0.5.0",
-    "google-auth-httplib2>=0.1.0",
     "openpyxl>=3.0.0",
 ]
 
 [project.optional-dependencies]
+# Soporte de Google Sheets: pip install "algebra-lineal-sheets[google]"
+# (en Google Colab ya viene preinstalado)
+google = [
+    "gspread>=5.0.0",
+    "google-auth>=2.0.0",
+    "google-auth-oauthlib>=0.5.0",
+    "google-auth-httplib2>=0.1.0",
+]
+# Todo en uno (google + pandas). Mantener sincronizado con el extra 'google'.
+completo = [
+    "gspread>=5.0.0",
+    "google-auth>=2.0.0",
+    "google-auth-oauthlib>=0.5.0",
+    "google-auth-httplib2>=0.1.0",
+    "pandas>=1.5",
+]
 dev = [
     "pytest>=6.0",
     "build>=0.7.0",

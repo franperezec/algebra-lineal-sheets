@@ -15,14 +15,27 @@ import os
 import re
 import inspect
 
-import gspread
-from gspread.utils import ValueRenderOption
-from google.auth import default
 import numpy as np
 
 # Variables globales del paquete
 gc = None                      # Cliente de Google Sheets (None hasta configurar())
 spreadsheet_name = 'matrices'  # Fuente activa: nombre, enlace o ruta .xlsx
+
+
+def _requiere_google():
+    """Importa gspread y google-auth de forma perezosa, con mensaje amigable si faltan.
+
+    Devuelve la tupla (gspread, ValueRenderOption, default).
+    """
+    try:
+        import gspread
+        from gspread.utils import ValueRenderOption
+        from google.auth import default
+        return gspread, ValueRenderOption, default
+    except ImportError:
+        raise ImportError(
+            'Falta el soporte de Google Sheets (gspread y google-auth). '
+            'Ejecuta: pip install "algebra-lineal-sheets[google]"')
 
 
 # ============================================================
@@ -59,6 +72,7 @@ class _BackendGoogle:
     """Lee y escribe matrices en un Google Sheet (por nombre o enlace)."""
 
     def __init__(self, fuente):
+        _, self._value_render, _ = _requiere_google()
         if _es_enlace(fuente):
             self._ss = gc.open_by_url(fuente)
         else:
@@ -73,7 +87,7 @@ class _BackendGoogle:
         # UNFORMATTED: los números llegan como números, no como texto formateado
         # por la configuración regional (evita que "3,5" se lea como texto).
         return self._pestanas[nombre].get_all_values(
-            value_render_option=ValueRenderOption.unformatted)
+            value_render_option=self._value_render.unformatted)
 
     def escribir(self, nombre, datos, sobrescribir=True):
         """Devuelve 'creada'/'actualizada', o None si existe y sobrescribir=False."""
@@ -102,9 +116,16 @@ class _BackendGoogle:
             worksheet.update(values=datos, range_name='A1')
         return accion
 
+    def guardar(self):
+        """No hace falta: cada escribir() ya queda guardado en Google Sheets."""
+
 
 class _BackendExcel:
-    """Lee y escribe matrices en un archivo Excel local (.xlsx)."""
+    """Lee y escribe matrices en un archivo Excel local (.xlsx).
+
+    El libro se carga UNA sola vez por instancia (una por llamada a
+    importar()/workspace()/exportar()) y las escrituras quedan en memoria
+    hasta llamar a guardar(): un solo save() por exportación."""
 
     def __init__(self, ruta, crear_si_no_existe=False):
         try:
@@ -115,7 +136,8 @@ class _BackendExcel:
         self._openpyxl = openpyxl
         self._ruta = ruta
         self._nuevo = not os.path.exists(ruta)
-        self._aviso_formulas_dado = False
+        self._libro_lectura = None     # cache data_only=True (valores calculados)
+        self._libro_escritura = None   # cache data_only=False (conserva fórmulas)
         if self._nuevo and not crear_si_no_existe:
             raise FileNotFoundError(f"No existe el archivo: {ruta}")
         self.descripcion = f"📊 Excel local: {os.path.basename(ruta)}"
@@ -125,15 +147,39 @@ class _BackendExcel:
         # Para escribir: sin data_only, para no perder fórmulas de otras pestañas.
         return self._openpyxl.load_workbook(self._ruta, data_only=not para_escribir)
 
+    def _libro_para_leer(self):
+        """Libro de LECTURA cacheado: se carga del disco una sola vez."""
+        if self._libro_lectura is None:
+            self._libro_lectura = self._cargar()
+        return self._libro_lectura
+
+    def _libro_para_escribir(self):
+        """Libro de ESCRITURA cacheado: se carga (o crea) una sola vez."""
+        if self._libro_escritura is None:
+            if self._nuevo:
+                libro = self._openpyxl.Workbook()
+                libro.remove(libro.active)   # sin la hoja 'Sheet' por defecto
+            else:
+                libro = self._cargar(para_escribir=True)
+                if self._contiene_formulas(libro):
+                    nombre_archivo = os.path.basename(self._ruta)
+                    print(f"⚠️  {nombre_archivo} contiene FÓRMULAS: "
+                          "Python no calcula sus resultados.")
+                    print("💡 Tras guardar desde Python, abre y guarda el archivo "
+                          "en Excel para que importar() vuelva a leer los "
+                          "valores calculados de esas fórmulas.")
+            self._libro_escritura = libro
+        return self._libro_escritura
+
     def nombres_pestanas(self):
         if self._nuevo:
             return []
-        return self._cargar().sheetnames
+        return self._libro_para_leer().sheetnames
 
     def leer(self, nombre):
         # Valores nativos de openpyxl (float/int/None): sin pasar por texto,
         # el separador decimal regional nunca interfiere.
-        hoja = self._cargar()[nombre]
+        hoja = self._libro_para_leer()[nombre]
         return [list(fila) for fila in hoja.iter_rows(values_only=True)]
 
     @staticmethod
@@ -146,40 +192,34 @@ class _BackendExcel:
         return False
 
     def escribir(self, nombre, datos, sobrescribir=True):
-        """Devuelve 'creada'/'actualizada', o None si existe y sobrescribir=False."""
-        if self._nuevo:
-            libro = self._openpyxl.Workbook()
-            hoja = libro.active
-            hoja.title = nombre
-            accion = "creada"
+        """Escribe EN MEMORIA; guardar() vuelca los cambios a disco.
+
+        Devuelve 'creada'/'actualizada', o None si existe y sobrescribir=False."""
+        libro = self._libro_para_escribir()
+        if nombre in libro.sheetnames:
+            if not sobrescribir:
+                return None
+            indice = libro.sheetnames.index(nombre)
+            libro.remove(libro[nombre])
+            hoja = libro.create_sheet(nombre, indice)
+            accion = "actualizada"
         else:
-            libro = self._cargar(para_escribir=True)
-            if not self._aviso_formulas_dado and self._contiene_formulas(libro):
-                self._aviso_formulas_dado = True
-                nombre_archivo = os.path.basename(self._ruta)
-                print(f"⚠️  {nombre_archivo} contiene FÓRMULAS: "
-                      "Python no calcula sus resultados.")
-                print("💡 Tras guardar desde Python, abre y guarda el archivo "
-                      "en Excel para que importar() vuelva a leer los "
-                      "valores calculados de esas fórmulas.")
-            if nombre in libro.sheetnames:
-                if not sobrescribir:
-                    return None
-                indice = libro.sheetnames.index(nombre)
-                libro.remove(libro[nombre])
-                hoja = libro.create_sheet(nombre, indice)
-                accion = "actualizada"
-            else:
-                hoja = libro.create_sheet(nombre)
-                accion = "creada"
+            hoja = libro.create_sheet(nombre)
+            accion = "creada"
 
         for i, fila in enumerate(datos, start=1):
             for j, valor in enumerate(fila, start=1):
                 hoja.cell(row=i, column=j, value=valor)
 
-        libro.save(self._ruta)
-        self._nuevo = False
         return accion
+
+    def guardar(self):
+        """Vuelca a disco los cambios de escribir(). Una sola escritura por sesión."""
+        if self._libro_escritura is None:
+            return                      # nunca se escribió nada: no tocar el disco
+        self._libro_escritura.save(self._ruta)
+        self._nuevo = False
+        self._libro_lectura = None      # invalidar: leer() debe ver lo recién guardado
 
 
 class _BackendCSV:
@@ -251,33 +291,45 @@ class _BackendCSV:
             csv.writer(f).writerows(datos)
         return "actualizada" if existe else "creada"
 
+    def guardar(self):
+        """No hace falta: cada escribir() ya escribe el archivo .csv."""
 
-def _conectar(fuente, para_escribir=False):
-    """Abre la fuente indicada y devuelve el backend adecuado (o None con mensajes)."""
-    if _es_excel(fuente):
-        try:
-            return _BackendExcel(fuente, crear_si_no_existe=para_escribir)
-        except FileNotFoundError:
-            print(f"❌ No existe el archivo Excel: {fuente}")
-            print("💡 Verifica la ruta, o usa exportar() para crearlo con tus variables")
-            return None
-        except ImportError as e:
-            print(f"❌ {e}")
-            return None
 
-    if _es_csv(fuente) or _es_carpeta(fuente):
-        try:
-            return _BackendCSV(fuente, crear_si_no_existe=para_escribir)
-        except FileNotFoundError:
-            print(f"❌ No existe la fuente CSV: {fuente}")
-            print("💡 Verifica la ruta, o usa exportar() para crearla con tus variables")
-            return None
+def _es_fuente_csv(fuente):
+    """True si la fuente es un archivo .csv o una carpeta de CSVs."""
+    return _es_csv(fuente) or _es_carpeta(fuente)
 
-    # Las fuentes de Google (nombre o enlace) necesitan configurar()
+
+def _conectar_excel(fuente, para_escribir):
+    try:
+        return _BackendExcel(fuente, crear_si_no_existe=para_escribir)
+    except FileNotFoundError:
+        print(f"❌ No existe el archivo Excel: {fuente}")
+        print("💡 Verifica la ruta, o usa exportar() para crearlo con tus variables")
+        return None
+    except ImportError as e:
+        print(f"❌ {e}")
+        return None
+
+
+def _conectar_csv(fuente, para_escribir):
+    try:
+        return _BackendCSV(fuente, crear_si_no_existe=para_escribir)
+    except FileNotFoundError:
+        print(f"❌ No existe la fuente CSV: {fuente}")
+        print("💡 Verifica la ruta, o usa exportar() para crearla con tus variables")
+        return None
+
+
+def _conectar_google(fuente, para_escribir):
+    # para_escribir no aplica: en Google el spreadsheet debe existir de antemano
     if not _verificar_configuracion():
         return None
     try:
         return _BackendGoogle(fuente)
+    except ImportError as e:
+        print(f"❌ {e}")
+        return None
     except Exception:
         print(f"❌ No se pudo abrir '{fuente}'")
         print("💡 Verifica que el archivo existe y tienes permisos")
@@ -285,6 +337,23 @@ def _conectar(fuente, para_escribir=False):
             _sugerir_sheets_disponibles()
         print("📝 Para cambiar de fuente: cambiar_sheet('nombre, enlace o ruta .xlsx')")
         return None
+
+
+# Registro de fuentes: se prueba cada predicado EN ORDEN; para añadir un
+# backend nuevo basta con agregar aquí su (predicado, conectora).
+_REGISTRO_FUENTES = [
+    (_es_excel, _conectar_excel),
+    (_es_fuente_csv, _conectar_csv),
+]
+
+
+def _conectar(fuente, para_escribir=False):
+    """Abre la fuente indicada y devuelve el backend adecuado (o None con mensajes)."""
+    for detectar, conectar in _REGISTRO_FUENTES:
+        if detectar(fuente):
+            return conectar(fuente, para_escribir)
+    # Todo lo demás es Google Sheets (nombre o enlace): necesita configurar()
+    return _conectar_google(fuente, para_escribir)
 
 
 # ============================================================
@@ -329,6 +398,8 @@ def configurar(sheet=None):
 
     Autentica con Google y establece la conexión con Google Sheets.
     En modo Excel local (.xlsx) NO se necesita cuenta de Google.
+    Para Google Sheets fuera de Colab, instala el extra:
+    pip install "algebra-lineal-sheets[google]"
     Ejecutar UNA VEZ al inicio de cada sesión.
 
     Args:
@@ -366,6 +437,16 @@ def configurar(sheet=None):
             print("⚠️  La fuente aún no existe: exportar() la creará")
         print("📖 Usa ayuda() para ver todos los comandos disponibles")
         return True
+
+    # Modo Google: cargar las dependencias opcionales de forma perezosa
+    try:
+        gspread, _, default = _requiere_google()
+    except ImportError as e:
+        print(f"❌ {e}")
+        print("💡 En Google Colab ya viene instalado: no necesitas hacer nada")
+        print("📊 Para trabajar sin Google: configurar(sheet='mi_archivo.xlsx')")
+        print("📁 O con CSV local: configurar(sheet='matrices/')")
+        return False
 
     try:
         # Verificar si estamos en Google Colab
@@ -955,6 +1036,14 @@ def exportar(*nombres_variables, sheet_name=None, sobrescribir=True):
 
     print("=" * 50)
     if exportadas:
+        try:
+            # Excel: única escritura a disco; Google/CSV: no hace nada
+            backend.guardar()
+        except Exception as e:
+            print(f"❌ No se pudo guardar — {backend.descripcion}")
+            print(f"   {e}")
+            print("💡 Si el archivo está abierto en Excel, ciérralo y vuelve a intentar exportar()")
+            return []
         print(f"🎯 ¡Exportadas exitosamente!: {', '.join(exportadas)}")
     print(f"🔗 Revisa tu archivo — {backend.descripcion}")
 
@@ -1238,6 +1327,7 @@ def ayuda():
     print("=" * 60)
     print("📦 Instalación:")
     print("   pip install algebra-lineal-sheets")
+    print('   pip install "algebra-lineal-sheets[google]"   # con Google Sheets')
     print()
     print("🔧 CONFIGURACIÓN:")
     print("   configurar()                 # Configurar una vez al inicio")
@@ -1294,3 +1384,4 @@ def version():
         print("📦 ALGEBRA LINEAL")
         print("👨‍🏫 Sistema de álgebra lineal con Google Sheets y Excel")
     print("🛠️  Instalación: pip install algebra-lineal-sheets")
+    print('🛠️  Con Google Sheets: pip install "algebra-lineal-sheets[google]"')

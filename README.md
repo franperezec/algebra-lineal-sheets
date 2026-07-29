@@ -7,9 +7,14 @@ Permite a estudiantes y profesores trabajar con matrices almacenadas en Google S
 
 ```bash
 pip install algebra-lineal-sheets
+
+# Para usar Google Sheets fuera de Colab:
+pip install "algebra-lineal-sheets[google]"
 ```
 
-¡Y listo! No necesitas configurar nada más.
+¡Y listo! La instalación base incluye todo para trabajar con Excel y CSV
+locales. En Google Colab tampoco necesitas nada más: gspread y google-auth
+ya vienen preinstalados.
 
 ### 🎓 Materiales de la clase (sin clonar nada)
 
@@ -51,8 +56,9 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Esto instala `algebra-lineal-sheets` con todas sus dependencias (numpy,
-gspread, google-auth, openpyxl), más `ipykernel`, `nbconvert`, `matplotlib`
+Esto instala `algebra-lineal-sheets` con todas sus dependencias, incluido
+el soporte de Google Sheets (extra `[google]`: gspread y google-auth), más
+`ipykernel`, `nbconvert`, `matplotlib`
 y `pandas` para ejecutar el notebook de la clase
 [`ejemplos/numpy_para_economistas.ipynb`](ejemplos/numpy_para_economistas.ipynb).
 En VS Code, abre el notebook y selecciona el kernel del `.venv`.
@@ -190,6 +196,10 @@ importar('A', 'B')
 resultado = A @ B
 exportar('resultado')
 ```
+
+> 💡 En Colab el soporte de Google ya viene incluido (gspread preinstalado).
+> Si trabajas en tu computador y quieres usar Google Sheets, instala
+> `pip install "algebra-lineal-sheets[google]"`.
 
 ### Operaciones Comunes
 
@@ -402,15 +412,30 @@ listar_variables_exportables()
 pip install --upgrade algebra-lineal-sheets
 ```
 
+> ⚠️ Desde la v1.4.0, gspread y google-auth son **opcionales**. Si actualizas
+> en un entorno existente no pierdes nada (pip no desinstala paquetes), pero
+> en un entorno **nuevo** fuera de Colab instala
+> `pip install "algebra-lineal-sheets[google]"` para usar Google Sheets.
+
 ## 📦 Requisitos
+
+**Núcleo (se instala automáticamente):**
 
 - Python 3.8+
 - numpy >= 1.20.0
-- gspread >= 5.0.0
-- google-auth >= 2.0.0
-- openpyxl >= 3.0.0 (para el modo Excel local)
+- openpyxl >= 3.0.0 (modo Excel local)
 
-Se instalan automáticamente con el paquete.
+**Opcional — Google Sheets** (`pip install "algebra-lineal-sheets[google]"`;
+en Google Colab ya viene preinstalado):
+
+- gspread >= 5.0.0
+- google-auth >= 2.0.0 (con oauthlib y httplib2)
+
+**Opcional — datos y regresiones** (`cargar_datos`, `matriz_diseno`):
+
+- pandas >= 1.5
+
+**Todo en uno:** `pip install "algebra-lineal-sheets[completo]"`
 
 ## 📄 Licencia
 

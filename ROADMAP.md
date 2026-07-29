@@ -4,6 +4,15 @@ La ventaja diferenciadora de esta librería es ser un **puente hoja de cálculo 
 Python para no-programadores, en español, bidireccional y sin configuración**.
 Este roadmap ordena las mejoras futuras alrededor de esa ventaja.
 
+> **Estado (28-jul-2026):** v1.4.0 publicada con la Fase 3 completa.
+> **Pendiente, en orden estratégico:**
+> 1. **Fase 2 — Español-first** (siguiente prioridad: es lo que más sufre un
+>    estudiante en la primera clase, y conviene tenerla antes del semestre),
+>    junto con los puntos 🔧 transversales baratos (borrar `MatrixLoader`,
+>    versión en un solo lugar, unificar clasificadores duplicados).
+> 2. **Fase 4 — Courseware**, empezando por su prerrequisito técnico
+>    (namespace explícito en vez de `f_back`).
+
 ## ✅ Fase 1 — Confiabilidad (v1.2.0, completada)
 
 - Lectura sin pérdida: números nativos desde Google Sheets (`UNFORMATTED`) y
@@ -18,7 +27,7 @@ Este roadmap ordena las mejoras futuras alrededor de esa ventaja.
   los datos y firma de `update` compatible con gspread 7.
 - Primera suite de tests (`tests/`).
 
-## 🇪🇸 Fase 2 — Español-first
+## 🔜 Fase 2 — Español-first (pendiente — siguiente prioridad)
 
 - Jerarquía interna de errores traducida a mensajes en español en un solo
   punto (hoy los errores más informativos de numpy/gspread/openpyxl salen
@@ -39,17 +48,19 @@ Este roadmap ordena las mejoras futuras alrededor de esa ventaja.
   matriciales, con mensajes amigables en español.
 - Ejemplo `ejemplos/ejemplo_regresion.py` + `datos_consumo.csv`.
 
-## 📴 Fase 3 — Modo offline de verdad
+## ✅ Fase 3 — Modo offline de verdad (v1.4.0, completada)
 
-- Imports perezosos de gspread/google-auth: que `import algebra_lineal`
-  funcione solo con numpy + openpyxl, y ofrecer el extra
-  `pip install algebra-lineal-sheets[google]` para Colab.
-- Registro de fuentes en `_conectar` en vez del if/elif actual (facilita
-  añadir nuevos backends).
-- Rendimiento en Excel: una sola carga/guardado del libro por llamada a
-  `exportar()` (hoy es una por variable).
+- Imports perezosos de gspread/google-auth: `import algebra_lineal` funciona
+  solo con numpy + openpyxl; el soporte de Google se instala con el extra
+  `pip install "algebra-lineal-sheets[google]"` (y `[completo]` añade pandas).
+  `verificar_instalacion()` distingue núcleo de opcionales.
+- Registro de fuentes en `_conectar` (`_REGISTRO_FUENTES`): añadir un backend
+  nuevo es agregar un (predicado, conectora); Google queda como fallback.
+- Rendimiento en Excel: una sola carga y un solo guardado del libro por
+  llamada a `exportar()` (antes era una por variable), y una sola carga
+  por llamada a `importar()`/`workspace()` (antes una por pestaña).
 
-## 🎓 Fase 4 — Courseware (valor agregado único)
+## 🎓 Fase 4 — Courseware (valor agregado único, pendiente)
 
 - `verificar('x_sol')`: comparar la respuesta del estudiante contra la
   solución del profesor (pestaña oculta u otro archivo) con tolerancia
@@ -63,7 +74,7 @@ Este roadmap ordena las mejoras futuras alrededor de esa ventaja.
   de namespace explícito; hoy impide construir funciones encima de
   `importar()`.
 
-## 🔧 Transversal
+## 🔧 Transversal (pendiente)
 
 - Ampliar la suite de tests (hoy cubre el pipeline de datos y los backends).
 - Unificar los clasificadores de tipo duplicados (`_obtener_dimensiones_y_tipo`,

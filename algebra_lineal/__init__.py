@@ -7,6 +7,7 @@ Perfecto para estudiantes y profesores.
 
 Instalación:
     pip install algebra-lineal-sheets
+    pip install "algebra-lineal-sheets[google]"   # con Google Sheets (Colab ya lo trae)
 
 Uso básico:
     from algebra_lineal import *
@@ -20,7 +21,7 @@ Uso básico:
 
 Autor: Francisco Pérez Mogollón
 Email: francisco.perezxxi@gmail.com
-Versión: 1.3.1
+Versión: 1.4.0
 """
 
 # Importar todas las funciones principales del módulo core
@@ -54,7 +55,7 @@ __all__ = [
 ]
 
 # Metadatos del paquete (IMPORTANTE: mantener sincronizado con pyproject.toml)
-__version__ = "1.3.1"
+__version__ = "1.4.0"
 __author__ = "Francisco Pérez Mogollón"
 __email__ = "francisco.perezxxi@gmail.com"
 __description__ = "Álgebra lineal simplificada con Google Sheets y Excel"
@@ -72,16 +73,40 @@ print("🔗 PyPI: https://pypi.org/project/algebra-lineal-sheets/")
 
 def verificar_instalacion():
     """
-    Verifica que el paquete esté instalado correctamente.
+    Verifica la instalación: núcleo (numpy, openpyxl) y opcionales
+    (Google Sheets, pandas).
+
+    Devuelve True si el núcleo está completo; los opcionales solo se informan.
     """
-    try:
-        import numpy
-        import gspread
-        from google.auth import default
-        print("✅ Todas las dependencias están instaladas correctamente")
+    def _disponible(modulo):
+        try:
+            __import__(modulo)
+            return True
+        except ImportError:
+            return False
+
+    nucleo_ok = True
+    for modulo in ("numpy", "openpyxl"):
+        if _disponible(modulo):
+            print(f"✅ {modulo}")
+        else:
+            print(f"❌ Falta {modulo} (dependencia del núcleo)")
+            nucleo_ok = False
+
+    if _disponible("gspread") and _disponible("google.auth"):
+        print("✅ Google Sheets (gspread + google-auth)")
+    else:
+        print("ℹ️  Google Sheets no disponible (opcional)")
+        print('   Para activarlo: pip install "algebra-lineal-sheets[google]"')
+        print("   En Google Colab ya viene instalado")
+
+    if _disponible("pandas"):
+        print("✅ pandas (cargar_datos, matriz_diseno)")
+    else:
+        print("ℹ️  pandas no disponible (opcional): pip install pandas")
+
+    if nucleo_ok:
         print("🚀 ¡Listo para usar algebra_lineal!")
-        return True
-    except ImportError as e:
-        print(f"❌ Error: Dependencia faltante - {e}")
+    else:
         print("💡 Ejecuta: pip install --upgrade algebra-lineal-sheets")
-        return False
+    return nucleo_ok
