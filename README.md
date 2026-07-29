@@ -32,9 +32,11 @@ ya vienen preinstalados.
   [descárgalo aquí](https://raw.githubusercontent.com/franperezec/algebra-lineal-sheets/main/ejemplos/regresion_consumo.ipynb),
   junto con
   [datos_consumo.csv](https://raw.githubusercontent.com/franperezec/algebra-lineal-sheets/main/ejemplos/datos_consumo.csv)
-  (si el CSV falta, el notebook lo descarga solo).
+  y
+  [datos_salarios.csv](https://raw.githubusercontent.com/franperezec/algebra-lineal-sheets/main/ejemplos/datos_salarios.csv)
+  para el último ejercicio (si algún CSV falta, el notebook lo descarga solo).
 
-El notebook funciona en dos modos:
+El notebook de *NumPy para economistas* funciona en dos modos:
 
 - **En Colab**: usa Google Sheets como en clase (`configurar()`), o sube
   `matrices_ejemplo.xlsx` al entorno de Colab (icono 📁 → subir) y usa
@@ -65,9 +67,10 @@ pip install -r requirements.txt
 
 Esto instala `algebra-lineal-sheets` con todas sus dependencias, incluido
 el soporte de Google Sheets (extra `[google]`: gspread y google-auth), más
-`ipykernel`, `nbconvert`, `matplotlib`
-y `pandas` para ejecutar el notebook de la clase
-[`ejemplos/numpy_para_economistas.ipynb`](ejemplos/numpy_para_economistas.ipynb).
+`ipykernel`, `nbconvert`, `matplotlib`, `pandas` y `statsmodels` para
+ejecutar los notebooks de la clase
+([`ejemplos/numpy_para_economistas.ipynb`](ejemplos/numpy_para_economistas.ipynb)
+y [`ejemplos/regresion_consumo.ipynb`](ejemplos/regresion_consumo.ipynb)).
 En VS Code, abre el notebook y selecciona el kernel del `.venv`.
 
 > 🛠️ **Opcional — ¿vas a modificar el código de la librería?** Por defecto
@@ -388,9 +391,11 @@ Notas:
 - **Notebook de la clase**:
   [`ejemplos/regresion_consumo.ipynb`](ejemplos/regresion_consumo.ipynb)
   desarrolla este mismo ejemplo paso a paso — teoría MCO en forma matricial,
-  estimación con la librería, réplica "desde cero" con pandas + NumPy y
-  ejercicios — e incluye las instrucciones para preparar el entorno `.venv`
-  en local.
+  estimación con la librería, réplica "desde cero" con pandas + NumPy, la
+  salida profesional con `statsmodels` y ejercicios con soluciones ocultas
+  (incluye [`ejemplos/datos_salarios.csv`](ejemplos/datos_salarios.csv), una
+  base simulada de salarios para practicar) — e incluye las instrucciones
+  para preparar el entorno `.venv` en local.
 
 ### Verificar Variables
 

@@ -19,6 +19,10 @@ matplotlib>=3.5
 # (cargar_datos, guardar_datos, matriz_diseno)
 pandas>=1.5
 
+# Para la salida profesional de la regresion en el notebook de consumo
+# (errores estandar, estadisticos t, p-valores)
+statsmodels>=0.14
+
 # NOTA para desarrollo: si vas a MODIFICAR el codigo de la libreria,
 # instala tambien la version local en modo editable con:
 #   pip install -e .
