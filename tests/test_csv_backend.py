@@ -49,6 +49,22 @@ def test_archivo_vacio(tmp_path):
     assert backend.leer('vacio') == []
 
 
+def test_configurar_y_cambiar_sheet_modo_csv(tmp_path, capsys):
+    # Regresión: antes una carpeta CSV caía en la rama de Google y
+    # configurar() intentaba autenticarse
+    fuente_previa = core.spreadsheet_name
+    try:
+        assert core.configurar(sheet=str(tmp_path)) is True
+        salida = capsys.readouterr().out
+        assert 'Modo CSV local' in salida
+        assert 'no se necesita cuenta de Google' in salida
+
+        core.cambiar_sheet(str(tmp_path))
+        assert 'modo CSV local' in capsys.readouterr().out
+    finally:
+        core.spreadsheet_name = fuente_previa
+
+
 def test_api_publica_con_carpeta(tmp_path):
     carpeta = str(tmp_path) + '\\'
     globals()['M_CSV_RT'] = np.array([[1.5, -2.5], [0.25, 4.0]])

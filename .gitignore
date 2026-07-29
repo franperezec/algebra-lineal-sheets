@@ -72,10 +72,8 @@ ehthumbs.db
 Thumbs.db
 
 # Google credentials (CRÍTICO: nunca subir credenciales)
-credentials.json
-token.json
-service_account.json
-client_secret.json
+# Se ignora todo .json por seguridad; si algún día necesitas versionar un
+# JSON de datos, añade una excepción como: !ejemplos/mi_archivo.json
 *.json
 
 # Archivos Excel generados por ejemplos/notebooks

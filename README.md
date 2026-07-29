@@ -52,8 +52,8 @@ pip install -r requirements.txt
 ```
 
 Esto instala `algebra-lineal-sheets` con todas sus dependencias (numpy,
-gspread, google-auth, openpyxl), más `ipykernel`, `nbconvert` y `matplotlib`
-para ejecutar el notebook de la clase
+gspread, google-auth, openpyxl), más `ipykernel`, `nbconvert`, `matplotlib`
+y `pandas` para ejecutar el notebook de la clase
 [`ejemplos/numpy_para_economistas.ipynb`](ejemplos/numpy_para_economistas.ipynb).
 En VS Code, abre el notebook y selecciona el kernel del `.venv`.
 
@@ -64,13 +64,13 @@ En VS Code, abre el notebook y selecciona el kernel del `.venv`.
 > editable con `pip install -e .`.
 
 > 📦 **¿Falta alguna librería?** Si al ejecutar un ejemplo aparece
-> `ModuleNotFoundError` (por ejemplo con `pandas` u otra librería que usemos
+> `ModuleNotFoundError` (por ejemplo con `scipy` u otra librería que usemos
 > a futuro), activa el entorno e instálala con pip:
 >
 > ```bash
 > .venv\Scripts\activate            # Windows
 > # source .venv/bin/activate      # macOS / Linux
-> pip install pandas                # o la librería que falte
+> pip install scipy                 # o la librería que falte
 > ```
 
 **⌨️ Atajos de teclado útiles en VS Code:**
@@ -160,11 +160,16 @@ exportar('x', 'verificacion')
 
 | Función | Descripción | Ejemplo |
 |---------|-------------|---------|
-| `configurar()` | Configuración inicial | `configurar(sheet='prope2026')`, `configurar(sheet='https://docs...')` o `configurar(sheet='matrices.xlsx')` |
-| `workspace()` | Ver matrices en Sheets | `workspace()` |
+| `configurar()` | Configuración inicial | `configurar(sheet='prope2026')`, `configurar(sheet='matrices.xlsx')` o `configurar(sheet='matrices/')` |
+| `workspace()` | Ver matrices de la fuente activa | `workspace()` |
 | `importar()` | Importar matrices | `importar('A', 'B')` |
 | `exportar()` | Exportar resultados | `exportar('C')` |
-| `cambiar_sheet()` | Cambiar archivo | `cambiar_sheet('proyecto2')` |
+| `cambiar_sheet()` | Cambiar de fuente | `cambiar_sheet('proyecto2')` |
+| `cargar_datos()` | Datos con columnas nombradas (pandas) | `datos = cargar_datos('consumo.csv')` |
+| `guardar_datos()` | Guardar un DataFrame | `guardar_datos(datos, 'salida.csv')` |
+| `matriz_diseno()` | Matriz de diseño para regresión | `X, y, nombres = matriz_diseno(datos, y='consumo')` |
+| `listar_variables_exportables()` | Ver qué se puede exportar | `listar_variables_exportables()` |
+| `version()` | Información del paquete | `version()` |
 | `ayuda()` | Ayuda completa | `ayuda()` |
 
 ## 📚 Para Estudiantes
@@ -359,8 +364,8 @@ Notas:
   la columna de constante al inicio (desactivable con `constante=False`).
 - Ejemplo completo en
   [`ejemplos/ejemplo_regresion.py`](ejemplos/ejemplo_regresion.py) con
-  [`ejemplos/datos_consumo.csv`](ejemplos/datos_consumo.csv); el resultado
-  esperado está en
+  [`ejemplos/datos_consumo.csv`](ejemplos/datos_consumo.csv); al ejecutarlo
+  genera `mi_regresion.xlsx`, que puedes comparar con el resultado esperado
   [`ejemplos/resultados_regresion.xlsx`](ejemplos/resultados_regresion.xlsx)
   (pestaña `beta`).
 

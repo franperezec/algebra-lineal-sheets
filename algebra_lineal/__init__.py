@@ -13,6 +13,7 @@ Uso básico:
     configurar(sheet='prope2026')            # Google Sheet por nombre
     # configurar(sheet='https://docs...')    # o por enlace
     # configurar(sheet='matrices.xlsx')      # o Excel local (sin Google)
+    # configurar(sheet='matrices/')          # o carpeta CSV local (sin Google)
     importar('A', 'B')
     C = A @ B
     exportar('C')

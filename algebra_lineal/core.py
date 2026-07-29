@@ -332,10 +332,11 @@ def configurar(sheet=None):
     Ejecutar UNA VEZ al inicio de cada sesión.
 
     Args:
-        sheet (str, optional): Fuente de trabajo. Acepta tres formas:
+        sheet (str, optional): Fuente de trabajo. Acepta cuatro formas:
             configurar(sheet='prope2026')                  # Google Sheet por nombre
             configurar(sheet='https://docs.google.com/..') # Google Sheet por enlace
             configurar(sheet='C:/datos/matrices.xlsx')     # Excel local
+            configurar(sheet='C:/datos/matrices/')         # Carpeta CSV local
             Si no se indica, se usa la actual ('matrices' por defecto).
 
     Returns:
@@ -353,6 +354,16 @@ def configurar(sheet=None):
             print("✅ Archivo encontrado — no se necesita cuenta de Google")
         else:
             print("⚠️  El archivo aún no existe: exportar() lo creará")
+        print("📖 Usa ayuda() para ver todos los comandos disponibles")
+        return True
+
+    # Modo CSV local (carpeta o archivo .csv): tampoco necesita Google
+    if _es_csv(spreadsheet_name) or _es_carpeta(spreadsheet_name):
+        print(f"📁 Modo CSV local: {spreadsheet_name}")
+        if os.path.exists(spreadsheet_name.rstrip('/\\')):
+            print("✅ Fuente encontrada — no se necesita cuenta de Google")
+        else:
+            print("⚠️  La fuente aún no existe: exportar() la creará")
         print("📖 Usa ayuda() para ver todos los comandos disponibles")
         return True
 
@@ -405,16 +416,17 @@ def cambiar_sheet(fuente):
     """
     📝 Cambiar la fuente de trabajo.
 
-    Acepta tres formas:
+    Acepta cuatro formas:
         cambiar_sheet('prope2026')                    # Google Sheet por nombre
         cambiar_sheet('https://docs.google.com/...')  # Google Sheet por enlace
         cambiar_sheet('C:/datos/matrices.xlsx')       # Excel local
+        cambiar_sheet('C:/datos/matrices/')           # Carpeta CSV local
 
     A partir de aquí, importar(), workspace() y exportar()
     usarán esta fuente.
 
     Args:
-        fuente (str): Nombre, enlace o ruta .xlsx
+        fuente (str): Nombre, enlace, ruta .xlsx/.csv o carpeta
     """
     global spreadsheet_name
     spreadsheet_name = fuente
@@ -426,6 +438,15 @@ def cambiar_sheet(fuente):
         else:
             print("⚠️  El archivo aún no existe: exportar() lo creará")
         print(f"📊 Ahora trabajando en modo Excel local: {fuente}")
+        return
+
+    # Modo CSV local (carpeta o archivo .csv)
+    if _es_csv(fuente) or _es_carpeta(fuente):
+        if os.path.exists(fuente.rstrip('/\\')):
+            print("✅ Fuente CSV encontrada")
+        else:
+            print("⚠️  La fuente aún no existe: exportar() la creará")
+        print(f"📁 Ahora trabajando en modo CSV local: {fuente}")
         return
 
     # Fuentes de Google: verificar que se puede abrir

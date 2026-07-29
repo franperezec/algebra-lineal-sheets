@@ -37,6 +37,7 @@ suma_total = ((y - y.mean()).T @ (y - y.mean())).item()
 r2 = 1 - suma_residuos / suma_total
 print(f"\nR² = {r2:.4f}")
 
-# 5. Guardar el resultado en un Excel aparte
-exportar('beta', sheet_name='resultados_regresion.xlsx')
-print("\n✅ Revisa 'resultados_regresion.xlsx' para ver la pestaña beta")
+# 5. Guardar el resultado en un Excel aparte (tu propia copia;
+#    compárala con resultados_regresion.xlsx, el resultado esperado del repo)
+exportar('beta', sheet_name='mi_regresion.xlsx')
+print("\n✅ Revisa 'mi_regresion.xlsx' y compáralo con 'resultados_regresion.xlsx'")
