@@ -359,7 +359,10 @@ Notas:
   la columna de constante al inicio (desactivable con `constante=False`).
 - Ejemplo completo en
   [`ejemplos/ejemplo_regresion.py`](ejemplos/ejemplo_regresion.py) con
-  [`ejemplos/datos_consumo.csv`](ejemplos/datos_consumo.csv).
+  [`ejemplos/datos_consumo.csv`](ejemplos/datos_consumo.csv); el resultado
+  esperado está en
+  [`ejemplos/resultados_regresion.xlsx`](ejemplos/resultados_regresion.xlsx)
+  (pestaña `beta`).
 
 ### Verificar Variables
 

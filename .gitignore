@@ -82,6 +82,8 @@ client_secret.json
 *.xlsx
 # ...excepto el Excel de ejemplo para estudiantes
 !ejemplos/matrices_ejemplo.xlsx
+# ...y el resultado esperado del ejemplo de regresión
+!ejemplos/resultados_regresion.xlsx
 
 # Archivos temporales
 *.tmp
