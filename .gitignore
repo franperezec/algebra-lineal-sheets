@@ -78,6 +78,8 @@ Thumbs.db
 
 # Archivos Excel generados por ejemplos/notebooks
 *.xlsx
+# CSV de resultados generado por el notebook de regresión
+resultados_consumo.csv
 # ...excepto el Excel de ejemplo para estudiantes
 !ejemplos/matrices_ejemplo.xlsx
 # ...y el resultado esperado del ejemplo de regresión

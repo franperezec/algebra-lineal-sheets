@@ -26,6 +26,13 @@ ya vienen preinstalados.
   (clic derecho → *"Guardar enlace como..."*).
 - **Excel de ejemplo** con las matrices de la clase (`A`, `B`, `v1`, `v2`, `b0`):
   [descargar matrices_ejemplo.xlsx](https://raw.githubusercontent.com/franperezec/algebra-lineal-sheets/main/ejemplos/matrices_ejemplo.xlsx).
+- **Notebook de regresión** *"Regresión lineal con matrices: la función de
+  consumo"*, pensado para trabajar **en local** con un entorno `.venv` (las
+  instrucciones de instalación vienen dentro del propio notebook):
+  [descárgalo aquí](https://raw.githubusercontent.com/franperezec/algebra-lineal-sheets/main/ejemplos/regresion_consumo.ipynb),
+  junto con
+  [datos_consumo.csv](https://raw.githubusercontent.com/franperezec/algebra-lineal-sheets/main/ejemplos/datos_consumo.csv)
+  (si el CSV falta, el notebook lo descarga solo).
 
 El notebook funciona en dos modos:
 
@@ -378,6 +385,12 @@ Notas:
   genera `mi_regresion.xlsx`, que puedes comparar con el resultado esperado
   [`ejemplos/resultados_regresion.xlsx`](ejemplos/resultados_regresion.xlsx)
   (pestaña `beta`).
+- **Notebook de la clase**:
+  [`ejemplos/regresion_consumo.ipynb`](ejemplos/regresion_consumo.ipynb)
+  desarrolla este mismo ejemplo paso a paso — teoría MCO en forma matricial,
+  estimación con la librería, réplica "desde cero" con pandas + NumPy y
+  ejercicios — e incluye las instrucciones para preparar el entorno `.venv`
+  en local.
 
 ### Verificar Variables
 
