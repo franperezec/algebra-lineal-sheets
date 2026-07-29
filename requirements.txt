@@ -22,6 +22,10 @@ nbconvert>=7.0
 # Para los graficos de vectores del notebook de la clase
 matplotlib>=3.5
 
+# Para datos con columnas nombradas y regresiones
+# (cargar_datos, guardar_datos, matriz_diseno)
+pandas>=1.5
+
 # NOTA para desarrollo: si vas a MODIFICAR el codigo de la libreria,
 # instala tambien la version local en modo editable con:
 #   pip install -e .

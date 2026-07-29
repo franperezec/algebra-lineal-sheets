@@ -19,7 +19,7 @@ Uso básico:
 
 Autor: Francisco Pérez Mogollón
 Email: francisco.perezxxi@gmail.com
-Versión: 1.2.0
+Versión: 1.3.0
 """
 
 # Importar todas las funciones principales del módulo core
@@ -31,7 +31,10 @@ from .core import (
     cambiar_sheet,
     ayuda,
     version,
-    listar_variables_exportables
+    listar_variables_exportables,
+    cargar_datos,
+    guardar_datos,
+    matriz_diseno
 )
 
 # Definir qué se importa cuando alguien hace "from algebra_lineal import *"
@@ -43,11 +46,14 @@ __all__ = [
     'cambiar_sheet',
     'ayuda',
     'version',
-    'listar_variables_exportables'
+    'listar_variables_exportables',
+    'cargar_datos',
+    'guardar_datos',
+    'matriz_diseno'
 ]
 
 # Metadatos del paquete (IMPORTANTE: mantener sincronizado con pyproject.toml)
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __author__ = "Francisco Pérez Mogollón"
 __email__ = "francisco.perezxxi@gmail.com"
 __description__ = "Álgebra lineal simplificada con Google Sheets y Excel"

@@ -9,6 +9,8 @@ Este módulo contiene toda la lógica del sistema.
 Instalado desde PyPI: pip install algebra-lineal-sheets
 """
 
+import csv
+import io
 import os
 import re
 import inspect
@@ -35,6 +37,18 @@ def _es_enlace(fuente):
 def _es_excel(fuente):
     """True si la fuente es una ruta a un archivo Excel local (.xlsx)."""
     return isinstance(fuente, str) and fuente.lower().endswith('.xlsx')
+
+
+def _es_csv(fuente):
+    """True si la fuente es una ruta a un archivo CSV."""
+    return isinstance(fuente, str) and fuente.lower().endswith('.csv')
+
+
+def _es_carpeta(fuente):
+    """True si la fuente es una carpeta local (libro de CSVs)."""
+    if not isinstance(fuente, str) or _es_enlace(fuente):
+        return False
+    return fuente.endswith(('/', '\\')) or os.path.isdir(fuente)
 
 
 # ============================================================
@@ -168,6 +182,76 @@ class _BackendExcel:
         return accion
 
 
+class _BackendCSV:
+    """Lee y escribe matrices en CSV: carpeta = libro (un .csv por pestaña),
+    o un archivo .csv suelto como fuente de una sola matriz."""
+
+    def __init__(self, fuente, crear_si_no_existe=False):
+        self._es_archivo = _es_csv(fuente)
+        if self._es_archivo:
+            self._carpeta = os.path.dirname(fuente) or '.'
+            base = os.path.splitext(os.path.basename(fuente))[0]
+            self._pestana_archivo = base
+            if not os.path.exists(fuente) and not crear_si_no_existe:
+                raise FileNotFoundError(f"No existe el archivo: {fuente}")
+            self.descripcion = f"📄 CSV: {os.path.basename(fuente)}"
+        else:
+            self._carpeta = fuente.rstrip('/\\') or '.'
+            self._pestana_archivo = None
+            if not os.path.isdir(self._carpeta) and not crear_si_no_existe:
+                raise FileNotFoundError(f"No existe la carpeta: {fuente}")
+            nombre_carpeta = os.path.basename(os.path.abspath(self._carpeta))
+            self.descripcion = f"📁 Carpeta CSV: {nombre_carpeta}/"
+
+    def _ruta_de(self, nombre):
+        return os.path.join(self._carpeta, f"{nombre}.csv")
+
+    def nombres_pestanas(self):
+        if self._es_archivo:
+            existe = os.path.exists(self._ruta_de(self._pestana_archivo))
+            return [self._pestana_archivo] if existe else []
+        if not os.path.isdir(self._carpeta):
+            return []
+        return sorted(os.path.splitext(f)[0] for f in os.listdir(self._carpeta)
+                      if f.lower().endswith('.csv'))
+
+    @staticmethod
+    def _detectar_separador(primera_linea):
+        # El Excel en español guarda CSV con ';' (la coma queda para decimales)
+        for separador in (';', '\t'):
+            if separador in primera_linea:
+                return separador
+        return ','
+
+    def leer(self, nombre):
+        ruta = self._ruta_de(nombre)
+        try:
+            with open(ruta, 'r', encoding='utf-8-sig', newline='') as f:
+                contenido = f.read()
+        except UnicodeDecodeError:
+            with open(ruta, 'r', encoding='latin-1', newline='') as f:
+                contenido = f.read()
+        if not contenido.strip():
+            return []
+        separador = self._detectar_separador(contenido.splitlines()[0])
+        lector = csv.reader(io.StringIO(contenido), delimiter=separador)
+        return [list(fila) for fila in lector]
+
+    def escribir(self, nombre, datos, sobrescribir=True):
+        """Devuelve 'creada'/'actualizada', o None si existe y sobrescribir=False."""
+        if self._es_archivo and nombre != self._pestana_archivo:
+            print(f"ℹ️  '{nombre}' se guarda como archivo aparte: "
+                  f"{self._ruta_de(nombre)}")
+        ruta = self._ruta_de(nombre)
+        existe = os.path.exists(ruta)
+        if existe and not sobrescribir:
+            return None
+        os.makedirs(self._carpeta, exist_ok=True)
+        with open(ruta, 'w', encoding='utf-8-sig', newline='') as f:
+            csv.writer(f).writerows(datos)
+        return "actualizada" if existe else "creada"
+
+
 def _conectar(fuente, para_escribir=False):
     """Abre la fuente indicada y devuelve el backend adecuado (o None con mensajes)."""
     if _es_excel(fuente):
@@ -179,6 +263,14 @@ def _conectar(fuente, para_escribir=False):
             return None
         except ImportError as e:
             print(f"❌ {e}")
+            return None
+
+    if _es_csv(fuente) or _es_carpeta(fuente):
+        try:
+            return _BackendCSV(fuente, crear_si_no_existe=para_escribir)
+        except FileNotFoundError:
+            print(f"❌ No existe la fuente CSV: {fuente}")
+            print("💡 Verifica la ruta, o usa exportar() para crearla con tus variables")
             return None
 
     # Las fuentes de Google (nombre o enlace) necesitan configurar()
@@ -489,6 +581,8 @@ def _limpiar_y_validar(nombre_pestana, datos_crudos):
             if all(isinstance(rejilla[primera][j], str) for j in cols_utiles):
                 lineas.append("   💡 La primera fila parece de ENCABEZADOS: bórrala, "
                               "la matriz debe contener solo números")
+                lineas.append("   📄 ¿Son datos con columnas nombradas? "
+                              "Usa cargar_datos('archivo') en su lugar")
         if huecos:
             detalle = ', '.join(huecos[:5])
             if len(huecos) > 5:
@@ -922,6 +1016,199 @@ def listar_variables_exportables():
     return variables_numpy
 
 
+# ============================================================
+# Datos con columnas nombradas (pandas)
+# ============================================================
+
+def _requiere_pandas():
+    """Importa pandas de forma perezosa, con mensaje amigable si falta."""
+    try:
+        import pandas as pd
+        return pd
+    except ImportError:
+        raise ImportError(
+            "Falta pandas para trabajar con datos. Ejecuta: pip install pandas")
+
+
+def _fila_tiene_texto(fila):
+    """True si la fila contiene algún texto no numérico (posible encabezado)."""
+    valores = [_normalizar_celda(celda) for celda in fila]
+    utiles = [v for v in valores if v is not None]
+    return bool(utiles) and any(isinstance(v, str) for v in utiles)
+
+
+def cargar_datos(archivo, hoja=None):
+    """
+    📄 Carga un archivo de datos (.csv o .xlsx) como DataFrame de pandas.
+
+    Detecta automáticamente el separador (',' o ';'), los decimales con coma
+    y si la primera fila trae los nombres de las variables (encabezados).
+    Si no hay encabezados, las columnas se llaman x1, x2, ...
+
+    Ejemplos:
+        datos = cargar_datos('consumo.csv')
+        datos = cargar_datos('datos.xlsx', hoja='consumo')
+
+    Args:
+        archivo (str): Ruta del archivo .csv o .xlsx
+        hoja (str, optional): Pestaña a leer si es .xlsx (por defecto la primera)
+
+    Returns:
+        pandas.DataFrame (o None si hubo un problema)
+    """
+    pd = _requiere_pandas()
+
+    if not os.path.exists(archivo):
+        print(f"❌ No existe el archivo: {archivo}")
+        return None
+
+    if _es_excel(archivo):
+        crudo = pd.read_excel(archivo, sheet_name=hoja if hoja else 0,
+                              header=None)
+    elif _es_csv(archivo):
+        try:
+            with open(archivo, 'r', encoding='utf-8-sig', newline='') as f:
+                primera_linea = f.readline()
+            codificacion = 'utf-8-sig'
+        except UnicodeDecodeError:
+            with open(archivo, 'r', encoding='latin-1', newline='') as f:
+                primera_linea = f.readline()
+            codificacion = 'latin-1'
+        separador = _BackendCSV._detectar_separador(primera_linea)
+        decimal = ',' if separador == ';' else '.'
+        crudo = pd.read_csv(archivo, sep=separador, decimal=decimal,
+                            header=None, encoding=codificacion)
+    else:
+        print(f"❌ Formato no soportado: {archivo}")
+        print("💡 Usa un archivo .csv o .xlsx")
+        return None
+
+    if crudo.empty:
+        print(f"⚠️  El archivo está vacío: {archivo}")
+        return crudo
+
+    # Detección de encabezados: primera fila con texto = nombres de variables
+    primera_fila = list(crudo.iloc[0])
+    if _fila_tiene_texto(primera_fila):
+        datos = crudo.iloc[1:].reset_index(drop=True)
+        datos.columns = [str(nombre).strip() for nombre in primera_fila]
+        for columna in datos.columns:
+            # _normalizar_celda entiende coma decimal ('90,5' → 90.5)
+            serie = [_normalizar_celda(v) for v in datos[columna]]
+            if all(v is None or isinstance(v, float) for v in serie):
+                datos[columna] = pd.to_numeric(pd.Series(serie))
+            # si la columna tiene texto real, se deja tal cual
+    else:
+        datos = crudo.copy()
+        datos.columns = [f"x{i + 1}" for i in range(datos.shape[1])]
+        print("ℹ️  Sin encabezados: columnas nombradas x1, x2, ...")
+
+    nombres = ', '.join(str(c) for c in datos.columns)
+    print(f"✅ {os.path.basename(archivo)} → "
+          f"{len(datos)} filas × {datos.shape[1]} columnas: {nombres}")
+    return datos
+
+
+def guardar_datos(datos, archivo):
+    """
+    💾 Guarda un DataFrame de pandas en .csv o .xlsx.
+
+    Ejemplos:
+        guardar_datos(datos, 'resultados.csv')
+        guardar_datos(datos, 'resultados.xlsx')
+
+    Returns:
+        bool: True si se guardó correctamente
+    """
+    pd = _requiere_pandas()
+
+    if not isinstance(datos, pd.DataFrame):
+        print("❌ 'datos' debe ser un DataFrame de pandas")
+        print("💡 Puedes crearlo con cargar_datos('archivo.csv')")
+        return False
+
+    if _es_excel(archivo):
+        datos.to_excel(archivo, index=False)
+    elif _es_csv(archivo):
+        datos.to_csv(archivo, index=False, encoding='utf-8-sig')
+    else:
+        print(f"❌ Formato no soportado: {archivo}")
+        print("💡 Usa un archivo .csv o .xlsx")
+        return False
+
+    print(f"✅ Guardado: {archivo} "
+          f"({len(datos)} filas × {datos.shape[1]} columnas)")
+    return True
+
+
+def matriz_diseno(datos, y, x=None, constante=True):
+    """
+    📐 Construye la matriz de diseño X y el vector y para una regresión.
+
+    Ejemplo:
+        datos = cargar_datos('consumo.csv')
+        X, y, nombres = matriz_diseno(datos, y='consumo',
+                                      x=['ingreso', 'precio'])
+        beta = np.linalg.solve(X.T @ X, X.T @ y)
+
+    Args:
+        datos: DataFrame de pandas (de cargar_datos)
+        y (str): Nombre de la columna dependiente
+        x (list, optional): Regresores; por defecto, todas las demás columnas
+        constante (bool): Añadir columna de unos al inicio (por defecto sí)
+
+    Returns:
+        (X, y, nombres): matriz de diseño (n×k), vector dependiente (n×1) y
+        nombres de los coeficientes en orden. (None, None, None) si hay error.
+    """
+    pd = _requiere_pandas()
+
+    if not isinstance(datos, pd.DataFrame):
+        print("❌ 'datos' debe ser un DataFrame de pandas")
+        print("💡 Puedes crearlo con cargar_datos('archivo.csv')")
+        return None, None, None
+
+    columnas = [str(c) for c in datos.columns]
+    regresores = [str(c) for c in x] if x is not None else \
+        [c for c in columnas if c != str(y)]
+
+    faltantes = [c for c in [str(y)] + regresores if c not in columnas]
+    if faltantes:
+        print(f"❌ Columnas no encontradas: {', '.join(faltantes)}")
+        print(f"💡 Columnas disponibles: {', '.join(columnas)}")
+        return None, None, None
+
+    tabla = datos.copy()
+    tabla.columns = columnas
+    sub = tabla[[str(y)] + regresores].apply(pd.to_numeric, errors='coerce')
+
+    no_numericas = [c for c in sub.columns
+                    if sub[c].isna().all() and not tabla[c].isna().all()]
+    if no_numericas:
+        print(f"❌ Columnas sin datos numéricos: {', '.join(no_numericas)}")
+        return None, None, None
+
+    filas_antes = len(sub)
+    sub = sub.dropna()
+    descartadas = filas_antes - len(sub)
+    if descartadas:
+        print(f"⚠️  Se descartaron {descartadas} filas con datos faltantes")
+    if sub.empty:
+        print("❌ No quedan filas con datos completos")
+        return None, None, None
+
+    y_vec = sub[str(y)].to_numpy(dtype=float).reshape(-1, 1)
+    matriz_x = sub[regresores].to_numpy(dtype=float)
+    nombres = list(regresores)
+    if constante:
+        matriz_x = np.column_stack([np.ones(len(matriz_x)), matriz_x])
+        nombres = ['const'] + nombres
+
+    print(f"📐 Matriz de diseño: X {matriz_x.shape}, y {y_vec.shape}")
+    print(f"   Coeficientes en orden: {', '.join(nombres)}")
+    return matriz_x, y_vec, nombres
+
+
 def ayuda():
     """
     📖 Muestra la ayuda completa del sistema.
@@ -936,6 +1223,7 @@ def ayuda():
     print("   configurar(sheet='prope2026')             # Google Sheet por nombre")
     print("   configurar(sheet='https://docs.goo...')   # Google Sheet por enlace")
     print("   configurar(sheet='C:/datos/notas.xlsx')   # Excel local (sin Google)")
+    print("   configurar(sheet='datos/')                # Carpeta CSV (un .csv por matriz)")
     print("   cambiar_sheet('fuente')      # Cambiar de archivo en cualquier momento")
     print()
     print("🏢 VER CONTENIDO:")
@@ -959,6 +1247,12 @@ def ayuda():
     print("   exportar('C')                # Exportar solo C")
     print("   exportar('C', 'Ainv')        # Exportar C y Ainv")
     print("   exportar('C', sheet_name='resultados.xlsx')  # A un Excel nuevo")
+    print()
+    print("📈 DATOS Y REGRESIONES (requiere pandas):")
+    print("   datos = cargar_datos('consumo.csv')       # DataFrame con columnas nombradas")
+    print("   X, y, nombres = matriz_diseno(datos, y='consumo')  # Matriz de diseño")
+    print("   beta = np.linalg.solve(X.T @ X, X.T @ y)  # OLS matricial")
+    print("   guardar_datos(datos, 'salida.csv')        # Guardar DataFrame")
     print()
     print("🔍 UTILIDADES:")
     print("   listar_variables_exportables() # Ver qué se puede exportar")

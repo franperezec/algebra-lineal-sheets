@@ -30,13 +30,22 @@ Este roadmap ordena las mejoras futuras alrededor de esa ventaja.
 - Exportar `verificar_instalacion()` en `__all__` y que también revise
   openpyxl.
 
+## ✅ v1.3.0 — CSV y datos con pandas (completada)
+
+- Backend CSV: carpeta como libro (un `.csv` por pestaña) y archivo suelto,
+  con separador `;`/`,` autodetectado y decimales con coma.
+- Capa de datos opcional con pandas: `cargar_datos` (detección automática de
+  encabezados), `guardar_datos` y `matriz_diseno` para regresiones OLS
+  matriciales, con mensajes amigables en español.
+- Ejemplo `ejemplos/ejemplo_regresion.py` + `datos_consumo.csv`.
+
 ## 📴 Fase 3 — Modo offline de verdad
 
 - Imports perezosos de gspread/google-auth: que `import algebra_lineal`
   funcione solo con numpy + openpyxl, y ofrecer el extra
   `pip install algebra-lineal-sheets[google]` para Colab.
-- Backend CSV (carpeta de archivos .csv) mediante un registro de fuentes en
-  `_conectar` en vez del if/elif actual.
+- Registro de fuentes en `_conectar` en vez del if/elif actual (facilita
+  añadir nuevos backends).
 - Rendimiento en Excel: una sola carga/guardado del libro por llamada a
   `exportar()` (hoy es una por variable).
 

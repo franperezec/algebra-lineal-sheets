@@ -242,9 +242,9 @@ exportar('w1', 'w2', 'w3', 'det_T')
 
 ## 🛠️ Configuración Avanzada
 
-### Fuentes de datos: nombre, enlace o Excel local
+### Fuentes de datos: nombre, enlace, Excel local o carpeta CSV
 
-`configurar(sheet=...)` y `cambiar_sheet(...)` aceptan **tres formas** y
+`configurar(sheet=...)` y `cambiar_sheet(...)` aceptan **cuatro formas** y
 detectan automáticamente cuál es:
 
 ```python
@@ -256,7 +256,14 @@ configurar(sheet='https://docs.google.com/spreadsheets/d/1vpg.../edit')
 
 # 3. Excel LOCAL en tu PC — no necesita internet ni cuenta de Google
 configurar(sheet='C:/Users/ana/Documents/matrices.xlsx')
+
+# 4. Carpeta de archivos CSV — cada .csv es una "pestaña" (A.csv, b0.csv...)
+configurar(sheet='C:/Users/ana/Documents/matrices/')
 ```
+
+En el modo CSV la lectura tolera el formato regional: separador `;` o `,`
+(el Excel en español guarda CSV con `;`) y decimales con coma. También se
+acepta un `.csv` suelto como fuente de una sola matriz.
 
 También puedes cambiar de fuente en cualquier momento, o usar otra solo
 para una operación puntual:
@@ -317,6 +324,42 @@ permite ver y editar el archivo `.xlsx` directamente en el editor.
 3. **Editar y guardar:** modifica las celdas y guarda con `Ctrl+S`. Escribe
    valores numéricos directos (no fórmulas — ver la nota anterior sobre
    fórmulas y valores calculados).
+
+### 📈 Datos, CSV y regresiones (pandas)
+
+Para trabajar con **datos con columnas nombradas** (por ejemplo la matriz de
+diseño de una regresión), la librería incluye tres funciones que usan pandas
+(`pip install pandas`; en Google Colab ya viene instalado):
+
+```python
+from algebra_lineal import *
+import numpy as np
+
+# 1. Cargar datos: detecta separador (',' o ';'), decimales con coma y
+#    si la primera fila trae los nombres de las variables
+datos = cargar_datos('datos_consumo.csv')
+# ✅ datos_consumo.csv → 12 filas × 3 columnas: consumo, ingreso, precio
+
+# 2. Matriz de diseño: y = consumo; X = [const, ingreso, precio]
+X, y, nombres = matriz_diseno(datos, y='consumo', x=['ingreso', 'precio'])
+
+# 3. Regresión OLS con álgebra matricial pura
+beta = np.linalg.solve(X.T @ X, X.T @ y)
+for nombre, valor in zip(nombres, beta.flatten()):
+    print(nombre, round(valor, 3))
+
+# 4. Guardar un DataFrame en .csv o .xlsx
+guardar_datos(datos, 'copia.xlsx')
+```
+
+Notas:
+- Si la primera fila del archivo tiene texto, se toma como **nombres de las
+  variables**; si es toda numérica, las columnas se llaman `x1, x2, ...`
+- `matriz_diseno` descarta (avisando) las filas con datos faltantes y añade
+  la columna de constante al inicio (desactivable con `constante=False`).
+- Ejemplo completo en
+  [`ejemplos/ejemplo_regresion.py`](ejemplos/ejemplo_regresion.py) con
+  [`ejemplos/datos_consumo.csv`](ejemplos/datos_consumo.csv).
 
 ### Verificar Variables
 
